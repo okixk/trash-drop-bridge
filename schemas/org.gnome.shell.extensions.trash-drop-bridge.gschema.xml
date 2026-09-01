@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.trash-drop-bridge" path="/org/gnome/shell/extensions/trash-drop-bridge/">
+    <key name="show-notifications" type="b">
+      <default>false</default>
+      <summary>Show a notification after a successful drop</summary>
+      <description>Show a GNOME Shell notification after files are moved to Trash.</description>
+    </key>
+    <key name="suppress-snapback" type="b">
+      <default>true</default>
+      <summary>Hide rejected-drop snap-back feedback</summary>
+      <description>Temporarily hide Mutter drag feedback after dropping files on Trash so the source does not appear to snap back.</description>
+    </key>
+  </schema>
+</schemalist>

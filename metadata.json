@@ -1,0 +1,8 @@
+{
+  "uuid": "trash-drop-bridge@oki",
+  "name": "Trash Drop Bridge",
+  "description": "Drag files from Nautilus onto the Ubuntu Dock trash icon to move them to trash on GNOME Wayland.",
+  "shell-version": ["50"],
+  "version": 3,
+  "settings-schema": "org.gnome.shell.extensions.trash-drop-bridge"
+}
