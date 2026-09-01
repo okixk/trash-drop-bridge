@@ -113,6 +113,8 @@ export default class TrashDropBridgeExtension extends Extension {
         this._hoveredTrash = false;
         this._hoveredActor = null;
         this._dropRequested = false;
+        this._cursorGrabActor = null;
+        this._cursorBeforeTrash = null;
         this._leaveTimeoutId = 0;
         this._feedbackRestoreId = 0;
         this._feedbackGroup = global.compositor.get_feedback_group();
@@ -142,6 +144,7 @@ export default class TrashDropBridgeExtension extends Extension {
             this._leaveTimeoutId = 0;
         }
 
+        this._restoreTrashCursor();
         this._restoreFeedbackGroup();
 
         if (this._dnd) {
@@ -163,6 +166,7 @@ export default class TrashDropBridgeExtension extends Extension {
     }
 
     _onDndEnter() {
+        this._restoreTrashCursor();
         this._restoreFeedbackGroup();
         this._dragSerial++;
         this._captureStarted = false;
@@ -203,6 +207,8 @@ export default class TrashDropBridgeExtension extends Extension {
         else
             this._hideHighlight();
 
+        this._setTrashCursor(this._hoveredTrash);
+
         if (!wasHovered && this._hoveredTrash)
             logInfo('Pointer entered Trash drop zone.');
         else if (wasHovered && !this._hoveredTrash)
@@ -213,6 +219,11 @@ export default class TrashDropBridgeExtension extends Extension {
         const serial = this._dragSerial;
         const wasOverTrash = this._hoveredTrash;
         this._hideHighlight();
+
+        // Mutter has already torn down its temporary DND grab by the time it
+        // emits dnd-leave, so only forget the actor reference here.
+        this._cursorGrabActor = null;
+        this._cursorBeforeTrash = null;
 
         // Mutter/Nautilus still considers the Shell area a rejected external
         // Wayland target because Meta.Dnd exposes no accept/finish API to
@@ -401,6 +412,48 @@ export default class TrashDropBridgeExtension extends Extension {
             this._feedbackGroup?.show();
         } catch {
             // Safe during disable/session teardown.
+        }
+    }
+
+    _setTrashCursor(overTrash) {
+        if (!overTrash) {
+            this._restoreTrashCursor();
+            return;
+        }
+
+        let grabActor;
+        try {
+            grabActor = global.stage.get_grab_actor();
+        } catch {
+            return;
+        }
+
+        if (!grabActor || grabActor.is_destroyed?.())
+            return;
+
+        if (this._cursorGrabActor !== grabActor) {
+            this._restoreTrashCursor();
+            this._cursorGrabActor = grabActor;
+            this._cursorBeforeTrash = grabActor.get_cursor_type();
+        }
+
+        // External Wayland drags over Shell UI are reported as rejected, even
+        // though this extension handles the Trash operation itself. Override
+        // only Mutter's active drag-grab actor while our drop zone is active.
+        grabActor.set_cursor_type(Clutter.CursorType.COPY);
+    }
+
+    _restoreTrashCursor() {
+        const actor = this._cursorGrabActor;
+        const cursor = this._cursorBeforeTrash;
+        this._cursorGrabActor = null;
+        this._cursorBeforeTrash = null;
+
+        try {
+            if (actor && !actor.is_destroyed?.() && cursor !== null)
+                actor.set_cursor_type(cursor);
+        } catch {
+            // The DND grab actor can disappear between pointer events.
         }
     }
 
