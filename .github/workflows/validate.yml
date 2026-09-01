@@ -1,0 +1,19 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GNOME tooling
+        run: sudo apt-get update && sudo apt-get install --yes gnome-shell
+      - name: Validate and package
+        run: make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trash-drop-bridge
+          path: dist/*.zip
